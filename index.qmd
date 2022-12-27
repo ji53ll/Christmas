@@ -1,0 +1,145 @@
+---
+title: "Christmas Movies"
+author: "Jisell Howe, CDT"
+date: "2022-12-25"
+editor: visual
+format: 
+  html:
+    code-fold: TRUE
+    code-summary: "Show the code"
+execute: 
+  warning: FALSE
+  wrap: TRUE
+  freeze: TRUE
+categories: [rstats, plotly, wordcloud, interactive, personalproject, christmas]
+image: "Christmas_movies1.png"
+---
+
+Link to code on [GitHub](https://github.com/ji53ll/Christmas).
+
+```{r}
+
+
+library(ggplot2)
+library(tidyverse)
+library(tm)
+library(dplyr)
+library(wordcloud)
+library(plotly)
+#library(rio)
+
+###data source
+#url <- 'https://www.kaggle.com/datasets/jonbown/christmas-movies?select=christmas_movies.csv'
+
+
+#url <- rio::import(file = url,which = 1)
+#df <- url
+
+df <- read.csv('christmas_movies.csv')
+
+#clean data
+df <- df %>% filter(!is.na(description))
+df$release_year <- as.numeric(df$release_year)
+description_vector <- as.character(df$description)
+
+#df
+
+```
+
+```{r}
+
+#remove punctuation and numbers from description column
+description_vector <- gsub("[[:punct::]]", "", description_vector)
+description_vector <- gsub("[[:digit:]]", "", description_vector)
+
+
+#remove pnctuation
+description_vector <- gsub("[!.!»?,-]","", description_vector)
+
+#create a Corpus object
+description_corpus <- Corpus(VectorSource(description_vector))
+
+#create tokens from individual words and phrases in description colum n
+#make everything lowercase
+description_corpus <- tm_map(description_corpus, content_transformer(tolower))
+
+#remove stopwords
+description_corpus <- tm_map(description_corpus, removeWords, stopwords("english"))
+
+
+#remove a list of words
+description_corpus <- tm_map(description_corpus, removeWords, c("the", "an", "a", "must", "and", "could", "would", "have", "set", "exists", "turn", "tale", "might", "else", "causing", "whose", "whos", "sets","put", "...", "always", "gets", "before","very", "loosely","with","various","very","into","bearing", "behind", "predictably", "follows", "eight","frantic", "tales", "lives", "dealing","eightyearold", "inadvertently", "finds", "thing", "take", "taken", "tries", "several", "kevin", "mccallister", "become", "commanding", "like", "three", "former", "general", "cynical", "griswold", "walter", "desparately", "frustrated", "never", "sent", "unfortunately", "becoming", "left", "becomes", "really", "begins", "marie", "miranda", "four", "seemingly", "meaning", "emily", "something", "also", "actually", "early", "despises", "thinks", "wagner", "jill", "mark", "appear", "reluctantly", "decided", "fending", "indulge", "wants", "matt", "meet", "comes", "going", "best", "think", "leaving", "thought", "approaching", "still", "heading", "picked", "decides", "seven", "shows", "learns", "lucas", "agrees", "happens", "robin", "mary", "jacob", "laurel", "facing", "quickly", "shocking", "peter", "mariah", "everett", "sebastian", "roped", "austin", "jokingly", "timothy", "emmanuel", "attends", "carlton", "mcandrick", "sarah", "palmer", "christmas", "christmastime", "summary", "»"," »", "«", " «","tasked", "helps", "things", "make", "keep", "falls", "makes", "another", "will", "come", "spend", "meet", "meets", "goes", "bring", "full", "takes", "just", "decide", "unexpectedly", "help", "show", "years", "find", "back", "york", "plot", "claus", "holiday", "young", "season", "time", "year", "small", "little", "girl", "woman", "man", "true", "plan", "plans", "lizzie", "virginia", "richfield", "pull", "begin", "foxworth", "maggie", "harper","whole", "current", "starts", "name", "zeus", "amalie", "hess", "brings", "receives","need", "pole", "place", "others", "plaza","existed","desparately","bumbling", "vermont", "adam", "calvin","langton", "anymore", "expect", "massey", "kyla", "cordinia","isadora", "leopold", "jonna", "nick", "julie", "walshrick", "mgtow", "briana", "laura", "kylie", "chloe", "evan", "third","noelle","lets", "serving", "even", "anna", "galwick", "chronicles", "story", "reel"))
+
+#remove white space
+description_corpus <- tm_map(description_corpus, stripWhitespace)
+
+
+```
+
+```{r}
+
+#determining themes
+
+matrix <- TermDocumentMatrix(description_corpus)
+matrix1 <- as.matrix(matrix)
+matrix_df <- as.data.frame(matrix1)
+
+freq <- head(matrix_df, n = 1000)
+
+
+sorted_matrix_df <- matrix_df[order(freq), ]
+
+top_100 <- sorted_matrix_df %>%
+  head(100)
+
+#top_100[0]
+```
+
+```{r}
+
+term_freq <- data.frame(term = colnames(matrix_df), freq = colSums(matrix_df))
+
+colors <- ifelse(term_freq$freq > 2, "#CDD9CC", "#BF1111")
+p <- wordcloud(description_corpus, min.freq = 10, colors = colors)
+
+```
+
+```{r}
+
+min_imdb <- min(df$imdb_rating)
+max_imdb <- max(df$imdb_rating)
+
+palette <- "#AEDFF2"
+
+p <- ggplot(df, aes(x = title, y = imdb_rating)) +
+  geom_segment(aes(
+                  x = title, 
+                  xend = title, 
+                  y = 0, 
+                  yend = imdb_rating), size = 1, alpha = 0.5, show.legend = FALSE, color = palette) +
+  geom_point(size = 2, color = "#4AB0D9", shape = 8) +
+  scale_y_reverse() +
+  labs(title = "Christmas Movie Ratings") + 
+  labs(subtitle = "Data Source: Kaggle. Retrieved from: https://www.kaggle.com/datasets/jonbown/christmas-movies. Graphic: Jisell Howe") +
+  theme(axis.ticks.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          legend.position="none")
+
+p <- ggplotly(p)
+
+
+p %>%
+  layout(
+    hoverlabel = list(
+      font = list(size = 15),
+      bgcolor = "#F2F2F2",
+      bordercolor = "#233A59",
+      borderwidth = 1,
+      image = df$img_src
+    )
+  )
+```
+
+Data Source: [Kaggle](https://www.kaggle.com/datasets/jonbown/christmas-movies). Graphic: Jisell Howe
