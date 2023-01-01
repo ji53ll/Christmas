@@ -1,6 +1,6 @@
 ---
 title: "Christmas Movies"
-author: "Jisell Howe, CDT"
+author: "Jisell Howe"
 date: "2022-12-25"
 editor: visual
 format: 
@@ -11,15 +11,13 @@ execute:
   warning: FALSE
   wrap: TRUE
   freeze: TRUE
-categories: [rstats, plotly, wordcloud, interactive, personalproject, christmas]
+categories: [rstats, wordcloud, interactive, personalproject, christmas]
 image: "Christmas_movies1.png"
 ---
 
 Link to code on [GitHub](https://github.com/ji53ll/Christmas).
 
 ```{r}
-
-
 library(ggplot2)
 library(tidyverse)
 library(tm)
@@ -41,8 +39,6 @@ df <- read.csv('christmas_movies.csv')
 df <- df %>% filter(!is.na(description))
 df$release_year <- as.numeric(df$release_year)
 description_vector <- as.character(df$description)
-
-#df
 
 ```
 
@@ -102,10 +98,10 @@ term_freq <- data.frame(term = colnames(matrix_df), freq = colSums(matrix_df))
 colors <- ifelse(term_freq$freq > 2, "#CDD9CC", "#BF1111")
 p <- wordcloud(description_corpus, min.freq = 10, colors = colors)
 
+title("Most Popular Christmas Movie Themes")
 ```
 
 ```{r}
-
 min_imdb <- min(df$imdb_rating)
 max_imdb <- max(df$imdb_rating)
 
@@ -125,21 +121,29 @@ p <- ggplot(df, aes(x = title, y = imdb_rating)) +
           axis.text.x = element_blank(),
           axis.title.x = element_blank(),
           axis.title.y = element_blank(),
-          legend.position="none")
+          legend.position="none") +
+  theme(plot.title = element_text(family = "Georgia", 
+                                  face = "bold",    
+                                  color = "#233A59",
+                                  size = 20,
+                                  hjust = 0,
+                                  vjust = 1,
+                                  lineheight = 1,
+                                  margin = margin(0, 0, 0, 0)))
 
 p <- ggplotly(p)
 
 
 p %>%
-  layout(
+  layout(dragmode = FALSE,
     hoverlabel = list(
-      font = list(size = 15),
+      font = list(size = 15, family = "Georgia", color = "#233A59"),
       bgcolor = "#F2F2F2",
       bordercolor = "#233A59",
-      borderwidth = 1,
-      image = df$img_src
+      borderwidth = 1
     )
   )
+
 ```
 
 Data Source: [Kaggle](https://www.kaggle.com/datasets/jonbown/christmas-movies). Graphic: Jisell Howe
